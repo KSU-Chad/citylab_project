@@ -32,8 +32,8 @@ private:
     std::map<std::string, std::pair<int, int>> sectors = {
         {"Front_Left", {0, 11}},
         {"Left", {12, 50}},
-        {"Right", {150, 189}},
-        {"Front_Right", {189, 200}}};
+        {"Right", {150, 187}},
+        {"Front_Right", {188, 199}}};
 
     // Initialize the minimum distances for each sector
     std::map<std::string, float> min_distances;
@@ -74,53 +74,33 @@ private:
     // Define the threshold for obstacle detection
     float obstacle_threshold = 0.35; // meters
 
-    // Determine detected obstacles
-    std::map<std::string, bool> detections;
-    for (const auto &min_dist : min_distances) {
-      detections[min_dist.first] = min_dist.second < obstacle_threshold;
-    }
+    // Narrow front check: only Front_Left and Front_Right determine
+    // whether an obstacle is directly in front
+    float min_narrow =
+        std::min(min_distances["Front_Left"], min_distances["Front_Right"]);
 
+    // Safest direction: side containing the single greatest valid ray
     float left_max =
         std::max(max_distances["Front_Left"], max_distances["Left"]);
     float right_max =
         std::max(max_distances["Front_Right"], max_distances["Right"]);
-    RCLCPP_INFO(this->get_logger(),
-                "[CHECK] left_max=%.2f right_max=%.2f -> would pick %s",
-                left_max, right_max,
-                (left_max >= right_max) ? "LEFT" : "RIGHT");
+    float turn_direction = (left_max >= right_max) ? 1.0f : -1.0f;
 
-    // Determine suggested action based on detection
     auto action = geometry_msgs::msg::Twist();
 
-    // If obstacles are detected in both front sectors, continue turning
-    if (detections["Front_Left"] || detections["Front_Right"]) {
-      if (!turning_) {
-        // Start turning if not already turning
-        turning_ = true;
-        turn_direction_ = -0.5; // Turning right
-      }
-      action.angular.z = turn_direction_; // Continue turning
-      RCLCPP_INFO(this->get_logger(), "Obstacle ahead, turning to clear path.");
+    if (min_narrow >= obstacle_threshold) {
+      action.linear.x = 0.1;
+      action.angular.z = 0.0;
+      RCLCPP_INFO(this->get_logger(), "Path clear (%.2f m). Moving forward.",
+                  min_narrow);
     } else {
-      turning_ = false; // Stop turning when the front is clear
-      // Priority 2: Side detections
-      if (detections["Left"]) {
-        action.linear.x = 0.1;   // Move forward slowly
-        action.angular.z = -0.3; // Slight right turn
-        RCLCPP_INFO(this->get_logger(),
-                    "Obstacle on the left, turning slightly right.");
-      } else if (detections["Right"]) {
-        action.linear.x = 0.1;  // Move forward slowly
-        action.angular.z = 0.3; // Slight left turn
-        RCLCPP_INFO(this->get_logger(),
-                    "Obstacle on the right, turning slightly left.");
-      } else {
-        action.linear.x = 0.1; // Move forward
-        RCLCPP_INFO(this->get_logger(), "No obstacles, moving forward.");
-      }
+      action.linear.x = 0.05;
+      action.angular.z = 0.5 * turn_direction;
+      RCLCPP_INFO(this->get_logger(),
+                  "Obstacle at %.2f m in front. Turning %s.", min_narrow,
+                  turn_direction > 0 ? "LEFT" : "RIGHT");
     }
 
-    // Publish the action command
     publisher_->publish(action);
   }
 
