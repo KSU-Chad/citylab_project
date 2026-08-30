@@ -6,28 +6,22 @@
 #include <sensor_msgs/msg/laser_scan.hpp>
 #include <string>
 
-class AutonomousExplorationNode : public rclcpp::Node {
+class Patrol : public rclcpp::Node {
 public:
-  AutonomousExplorationNode() : Node("autonomous_exploration_node") {
+  Patrol() : Node("patrol_node") {
     // Subscriber to LaserScan
     subscriber_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
         "/fastbot_1/scan", 10,
-        std::bind(&AutonomousExplorationNode::laserscan_callback, this,
-                  std::placeholders::_1));
-
-    // Initialize state variables
-    turning_ = false;
-    turn_direction_ = -0.5; // Default to turning right
+        std::bind(&Patrol::laserscan_callback, this, std::placeholders::_1));
 
     // Publisher for movement commands
     publisher_ = this->create_publisher<geometry_msgs::msg::Twist>(
         "/fastbot_1/cmd_vel", 10);
 
-    timer_ = this->create_wall_timer(
-        std::chrono::milliseconds(100),
-        std::bind(&AutonomousExplorationNode::control_loop, this));
+    timer_ = this->create_wall_timer(std::chrono::milliseconds(100),
+                                     std::bind(&Patrol::control_loop, this));
 
-    RCLCPP_INFO(this->get_logger(), "Autonomous Exploration Node Ready...");
+    RCLCPP_INFO(this->get_logger(), "Patrol Node Ready...");
   }
 
 private:
@@ -116,13 +110,11 @@ private:
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr publisher_;
   rclcpp::TimerBase::SharedPtr timer_;
   geometry_msgs::msg::Twist current_cmd_;
-  bool turning_;
-  double turn_direction_;
 };
 
 int main(int argc, char **argv) {
   rclcpp::init(argc, argv);
-  auto node = std::make_shared<AutonomousExplorationNode>();
+  auto node = std::make_shared<Patrol>();
   rclcpp::spin(node);
   rclcpp::shutdown();
   return 0;
