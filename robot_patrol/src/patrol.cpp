@@ -15,13 +15,17 @@ public:
         std::bind(&AutonomousExplorationNode::laserscan_callback, this,
                   std::placeholders::_1));
 
+    // Initialize state variables
+    turning_ = false;
+    turn_direction_ = -0.5; // Default to turning right
+
     // Publisher for movement commands
     publisher_ = this->create_publisher<geometry_msgs::msg::Twist>(
         "/fastbot_1/cmd_vel", 10);
 
-    // Initialize state variables
-    turning_ = false;
-    turn_direction_ = -0.5; // Default to turning right
+    timer_ = this->create_wall_timer(
+        std::chrono::milliseconds(100),
+        std::bind(&AutonomousExplorationNode::control_loop, this));
 
     RCLCPP_INFO(this->get_logger(), "Autonomous Exploration Node Ready...");
   }
@@ -47,7 +51,7 @@ private:
       int start_idx = sector.second.first;
       int end_idx = sector.second.second;
 
-      // Ensure the index range is within bounds and not empty
+      // Check for invalid data
       if (start_idx < static_cast<int>(msg->ranges.size()) &&
           end_idx < static_cast<int>(msg->ranges.size())) {
         float min_val = std::numeric_limits<float>::infinity();
@@ -74,12 +78,12 @@ private:
     // Define the threshold for obstacle detection
     float obstacle_threshold = 0.35; // meters
 
-    // Narrow front check: only Front_Left and Front_Right determine
-    // whether an obstacle is directly in front
+    // Narrow front check
     float min_narrow =
         std::min(min_distances["Front_Left"], min_distances["Front_Right"]);
 
     // Safest direction: side containing the single greatest valid ray
+    // as per the instructions
     float left_max =
         std::max(max_distances["Front_Left"], max_distances["Left"]);
     float right_max =
@@ -101,12 +105,17 @@ private:
                   turn_direction > 0 ? "LEFT" : "RIGHT");
     }
 
-    publisher_->publish(action);
+    // Store the command for the control loop to publish at 10 Hz
+    current_cmd_ = action;
   }
+
+  void control_loop() { publisher_->publish(current_cmd_); }
 
 private:
   rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr subscriber_;
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr publisher_;
+  rclcpp::TimerBase::SharedPtr timer_;
+  geometry_msgs::msg::Twist current_cmd_;
   bool turning_;
   double turn_direction_;
 };
