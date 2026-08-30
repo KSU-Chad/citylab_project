@@ -1,3 +1,4 @@
+#include <cmath>
 #include <geometry_msgs/msg/twist.hpp>
 #include <limits>
 #include <map>
@@ -29,9 +30,10 @@ private:
   void laserscan_callback(const sensor_msgs::msg::LaserScan::SharedPtr msg) {
     // Define the sectors
     std::map<std::string, std::pair<int, int>> sectors = {
-        {"Right_Rear", {0, 33}},    {"Right", {34, 66}},
-        {"Front_Right", {67, 100}}, {"Front_Left", {101, 133}},
-        {"Left", {134, 166}},       {"Left_Rear", {167, 199}}};
+        {"Front_Right", {0, 11}},
+        {"Right", {12, 50}},
+        {"Left", {150, 189}},
+        {"Front_Left", {189, 200}}};
 
     // Initialize the minimum distances for each sector
     std::map<std::string, float> min_distances;
@@ -49,8 +51,14 @@ private:
           end_idx < static_cast<int>(msg->ranges.size())) {
         float min_val = std::numeric_limits<float>::infinity();
         for (int i = start_idx; i <= end_idx; ++i) {
-          if (msg->ranges[i] < min_val) {
-            min_val = msg->ranges[i];
+          float range = msg->ranges[i];
+          if (std::isinf(range) || std::isnan(range) ||
+              range < msg->range_min || range > msg->range_max) {
+            continue;
+          }
+
+          if (range < min_val) {
+            min_val = range;
           }
         }
         min_distances[sector.first] = min_val;
@@ -82,27 +90,17 @@ private:
       turning_ = false; // Stop turning when the front is clear
       // Priority 2: Side detections
       if (detections["Left"]) {
-        action.linear.x = 0.2;   // Move forward slowly
+        action.linear.x = 0.1;   // Move forward slowly
         action.angular.z = -0.3; // Slight right turn
         RCLCPP_INFO(this->get_logger(),
                     "Obstacle on the left, turning slightly right.");
       } else if (detections["Right"]) {
-        action.linear.x = 0.2;  // Move forward slowly
+        action.linear.x = 0.1;  // Move forward slowly
         action.angular.z = 0.3; // Slight left turn
         RCLCPP_INFO(this->get_logger(),
                     "Obstacle on the right, turning slightly left.");
-      }
-      // Priority 3: Rear detections
-      else if (detections["Right_Rear"]) {
-        action.linear.x = 0.3; // Move forward
-        RCLCPP_INFO(this->get_logger(),
-                    "Obstacle on the right rear, moving forward.");
-      } else if (detections["Left_Rear"]) {
-        action.linear.x = 0.3; // Move forward
-        RCLCPP_INFO(this->get_logger(),
-                    "Obstacle on the left rear, moving forward.");
       } else {
-        action.linear.x = 0.5; // Move forward
+        action.linear.x = 0.1; // Move forward
         RCLCPP_INFO(this->get_logger(), "No obstacles, moving forward.");
       }
     }
