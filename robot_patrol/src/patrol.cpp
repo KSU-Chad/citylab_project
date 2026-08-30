@@ -105,7 +105,6 @@ private:
 
   void control_loop() { publisher_->publish(current_cmd_); }
 
-private:
   rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr subscriber_;
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr publisher_;
   rclcpp::TimerBase::SharedPtr timer_;
