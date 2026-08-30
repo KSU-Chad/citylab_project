@@ -30,13 +30,14 @@ private:
   void laserscan_callback(const sensor_msgs::msg::LaserScan::SharedPtr msg) {
     // Define the sectors
     std::map<std::string, std::pair<int, int>> sectors = {
-        {"Front_Right", {0, 11}},
-        {"Right", {12, 50}},
-        {"Left", {150, 189}},
-        {"Front_Left", {189, 200}}};
+        {"Front_Left", {0, 11}},
+        {"Left", {12, 50}},
+        {"Right", {150, 189}},
+        {"Front_Right", {189, 200}}};
 
     // Initialize the minimum distances for each sector
     std::map<std::string, float> min_distances;
+    std::map<std::string, float> max_distances;
     for (const auto &sector : sectors) {
       min_distances[sector.first] = std::numeric_limits<float>::infinity();
     }
@@ -50,6 +51,7 @@ private:
       if (start_idx < static_cast<int>(msg->ranges.size()) &&
           end_idx < static_cast<int>(msg->ranges.size())) {
         float min_val = std::numeric_limits<float>::infinity();
+        float max_val = -1.0f;
         for (int i = start_idx; i <= end_idx; ++i) {
           float range = msg->ranges[i];
           if (std::isinf(range) || std::isnan(range) ||
@@ -60,8 +62,12 @@ private:
           if (range < min_val) {
             min_val = range;
           }
+          if (range > max_val) {
+            max_val = range;
+          }
         }
         min_distances[sector.first] = min_val;
+        max_distances[sector.first] = max_val;
       }
     }
 
@@ -73,6 +79,15 @@ private:
     for (const auto &min_dist : min_distances) {
       detections[min_dist.first] = min_dist.second < obstacle_threshold;
     }
+
+    float left_max =
+        std::max(max_distances["Front_Left"], max_distances["Left"]);
+    float right_max =
+        std::max(max_distances["Front_Right"], max_distances["Right"]);
+    RCLCPP_INFO(this->get_logger(),
+                "[CHECK] left_max=%.2f right_max=%.2f -> would pick %s",
+                left_max, right_max,
+                (left_max >= right_max) ? "LEFT" : "RIGHT");
 
     // Determine suggested action based on detection
     auto action = geometry_msgs::msg::Twist();
