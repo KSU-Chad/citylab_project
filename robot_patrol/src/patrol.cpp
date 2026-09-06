@@ -18,12 +18,12 @@ public:
 
     // Subscriber to LaserScan
     subscriber_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
-        "/fastbot_1/scan", 10,
+        "/scan", 10,
         std::bind(&Patrol::laserscan_callback, this, std::placeholders::_1));
 
     // Publisher for movement commands
-    publisher_ = this->create_publisher<geometry_msgs::msg::Twist>(
-        "/fastbot_1/cmd_vel", 10);
+    publisher_ =
+        this->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 10);
 
     timer_ = this->create_wall_timer(std::chrono::milliseconds(100),
                                      std::bind(&Patrol::control_loop, this));

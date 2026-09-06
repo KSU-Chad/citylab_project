@@ -61,7 +61,7 @@ Visualization Manager:
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /fastbot_1_robot_description
+        Value: /robot_description
       Enabled: true
       Links:
         All Links Enabled: true
@@ -69,36 +69,36 @@ Visualization Manager:
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
-        fastbot_1_base_footprint:
+        base_footprint:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        fastbot_1_base_link:
+        base_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        fastbot_1_camera:
+        camera:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        fastbot_1_cover:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        fastbot_1_lidar:
+        cover:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        fastbot_1_wheel_left:
+        lidar:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        fastbot_1_wheel_right:
+        wheel_left:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        wheel_right:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -123,21 +123,21 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: true
-        fastbot_1_base_footprint:
+        base_footprint:
           Value: true
-        fastbot_1_base_link:
+        base_link:
           Value: true
-        fastbot_1_camera:
+        camera:
           Value: true
-        fastbot_1_cover:
+        cover:
           Value: true
-        fastbot_1_lidar:
+        lidar:
           Value: true
-        fastbot_1_odom:
+        odom:
           Value: true
-        fastbot_1_wheel_left:
+        wheel_left:
           Value: true
-        fastbot_1_wheel_right:
+        wheel_right:
           Value: true
         world:
           Value: true
@@ -148,18 +148,18 @@ Visualization Manager:
       Show Names: true
       Tree:
         world:
-          fastbot_1_odom:
-            fastbot_1_base_footprint:
-              fastbot_1_base_link:
-                fastbot_1_camera:
+          odom:
+            base_footprint:
+              base_link:
+                camera:
                   {}
-                fastbot_1_cover:
+                cover:
                   {}
-                fastbot_1_lidar:
+                lidar:
                   {}
-                fastbot_1_wheel_left:
+                wheel_left:
                   {}
-                fastbot_1_wheel_right:
+                wheel_right:
                   {}
       Update Interval: 0
       Value: true
@@ -239,7 +239,7 @@ Visualization Manager:
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
-    Fixed Frame: fastbot_1_odom
+    Fixed Frame: odom
     Frame Rate: 30
   Name: root
   Tools:
