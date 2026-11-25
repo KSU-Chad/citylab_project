@@ -1,6 +1,7 @@
 #include <cmath>
 #include <limits>
 #include <rclcpp/rclcpp.hpp>
+#include <robot_patrol/srv/get_direction.hpp>
 
 class DirectionService : public rclcpp::Node {
 public:

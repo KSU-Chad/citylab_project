@@ -27,19 +27,25 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
-add_executable(patrol_executable src/patrol.cpp)
-ament_target_dependencies(patrol_executable rclcpp geometry_msgs sensor_msgs)
-
-install(TARGETS
-  patrol_executable
-  DESTINATION lib/${PROJECT_NAME})
-
-install(DIRECTORY launch DESTINATION share/${PROJECT_NAME}/)
-install(DIRECTORY rviz DESTINATION share/${PROJECT_NAME}/)
-
 rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/GetDirection.srv"
   DEPENDENCIES sensor_msgs
 )
+
+add_executable(patrol_executable src/patrol.cpp)
+ament_target_dependencies(patrol_executable rclcpp geometry_msgs sensor_msgs)
+
+add_executable(direction_service_executable src/direction_service.cpp)
+ament_target_dependencies(direction_service_executable rclcpp sensor_msgs)
+rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} "rosidl_typesupport_cpp")
+target_link_libraries(direction_service_executable "${cpp_typesupport_target}")
+
+install(TARGETS
+  patrol_executable
+  direction_service_executable
+  DESTINATION lib/${PROJECT_NAME})
+
+install(DIRECTORY launch DESTINATION share/${PROJECT_NAME}/)
+install(DIRECTORY rviz DESTINATION share/${PROJECT_NAME}/)
 
 ament_package()
