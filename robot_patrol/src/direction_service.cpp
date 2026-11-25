@@ -12,13 +12,14 @@ public:
         std::bind(&DirectionService::direction_callback, this,
                   std::placeholders::_1, std::placeholders::_2));
 
-    // RCLCPP_INFO(this->get_logger(), "Patrol Node Ready...");
+    RCLCPP_INFO(this->get_logger(), "Service Server Ready");
   }
 
 private:
   void direction_callback(
       const std::shared_ptr<robot_patrol::srv::GetDirection::Request> request,
       std::shared_ptr<robot_patrol::srv::GetDirection::Response> response) {
+    RCLCPP_INFO(this->get_logger(), "Request Received");
     const auto &scan = request->laser_data;
     int n = static_cast<int>(scan.ranges.size());
     float inc_deg = scan.angle_increment * 180.0f / M_PI;
@@ -102,6 +103,8 @@ private:
     } else {
       response->direction = "right";
     }
+    RCLCPP_INFO(this->get_logger(), "Request Completed: %s",
+                response->direction.c_str());
   }
   rclcpp::Service<robot_patrol::srv::GetDirection>::SharedPtr service_;
 };

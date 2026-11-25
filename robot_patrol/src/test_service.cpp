@@ -1,3 +1,4 @@
+#include "rclcpp/logging.hpp"
 #include <chrono>
 #include <memory>
 #include <rclcpp/rclcpp.hpp>
@@ -19,6 +20,8 @@ public:
 
     timer_ = this->create_wall_timer(
         1s, std::bind(&TestService::timer_callback, this));
+
+    RCLCPP_INFO(this->get_logger(), "Client Ready");
   }
 
 private:
@@ -32,17 +35,18 @@ private:
       return;
     }
 
-    auto request =
-        std::make_shared<robot_patrol::srv::GetDirection::Request>();
+    auto request = std::make_shared<robot_patrol::srv::GetDirection::Request>();
     request->laser_data = latest_scan_;
 
     client_->async_send_request(
         request,
         [this](rclcpp::Client<robot_patrol::srv::GetDirection>::SharedFuture
                    future) {
-          RCLCPP_INFO(this->get_logger(), "Direction: %s",
+          RCLCPP_INFO(this->get_logger(), "Response Received: %s",
                       future.get()->direction.c_str());
         });
+
+    RCLCPP_INFO(this->get_logger(), "Request Sent");
   }
 
   rclcpp::Client<robot_patrol::srv::GetDirection>::SharedPtr client_;
