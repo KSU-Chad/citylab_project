@@ -40,9 +40,15 @@ ament_target_dependencies(direction_service_executable rclcpp sensor_msgs)
 rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} "rosidl_typesupport_cpp")
 target_link_libraries(direction_service_executable "${cpp_typesupport_target}")
 
+add_executable(test_service_executable src/test_service.cpp)
+ament_target_dependencies(test_service_executable rclcpp sensor_msgs)
+rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} "rosidl_typesupport_cpp")
+target_link_libraries(test_service_executable "${cpp_typesupport_target}")
+
 install(TARGETS
   patrol_executable
   direction_service_executable
+  test_service_executable
   DESTINATION lib/${PROJECT_NAME})
 
 install(DIRECTORY launch DESTINATION share/${PROJECT_NAME}/)
