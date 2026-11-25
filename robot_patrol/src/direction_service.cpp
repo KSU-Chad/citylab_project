@@ -1,5 +1,6 @@
-#include <rclcpp/rclcpp.hpp>
 #include <cmath>
+#include <limits>
+#include <rclcpp/rclcpp.hpp>
 
 class DirectionService : public rclcpp::Node {
 public:
@@ -59,11 +60,47 @@ private:
       return total;
     };
 
+    // smallest valid distance between two angles
+    auto min_sector = [&](float start_deg, float end_deg) {
+      int start_idx = angle_to_index(start_deg);
+      int end_idx = angle_to_index(end_deg);
+      float min_val = std::numeric_limits<float>::infinity();
+
+      auto check_ray = [&](int i) {
+        float r = scan.ranges[i];
+        if (std::isinf(r) || std::isnan(r) || r < scan.range_min ||
+            r > scan.range_max) {
+          return;
+        }
+        if (r < min_val)
+          min_val = r;
+      };
+
+      if (start_idx <= end_idx) {
+        for (int i = start_idx; i <= end_idx; ++i)
+          check_ray(i);
+      } else { // sector wraps around the end of the array
+        for (int i = start_idx; i < n; ++i)
+          check_ray(i);
+        for (int i = 0; i <= end_idx; ++i)
+          check_ray(i);
+      }
+      return min_val;
+    };
+
     float total_dist_sec_right = sum_sector(-90.0f, -30.0f);
     float total_dist_sec_front = sum_sector(-30.0f, 30.0f);
     float total_dist_sec_left = sum_sector(30.0f, 90.0f);
 
-    (void)response;
+    float min_dist_front = min_sector(-30.0f, 30.0f);
+
+    if (min_dist_front > 0.35f) {
+      response->direction = "forward";
+    } else if (total_dist_sec_left > total_dist_sec_right) {
+      response->direction = "left";
+    } else {
+      response->direction = "right";
+    }
   }
   rclcpp::Service<robot_patrol::srv::GetDirection>::SharedPtr service_;
 };
