@@ -1,4 +1,5 @@
 #include <rclcpp/rclcpp.hpp>
+#include <cmath>
 
 class DirectionService : public rclcpp::Node {
 public:
@@ -15,7 +16,55 @@ public:
 private:
   void direction_callback(
       const std::shared_ptr<robot_patrol::srv::GetDirection::Request> request,
-      std::shared_ptr<robot_patrol::srv::GetDirection::Response> response) {}
+      std::shared_ptr<robot_patrol::srv::GetDirection::Response> response) {
+    const auto &scan = request->laser_data;
+    int n = static_cast<int>(scan.ranges.size());
+    float inc_deg = scan.angle_increment * 180.0f / M_PI;
+    float angle_min_deg = scan.angle_min * 180.0f / M_PI;
+
+    // convert an angle (deg, 0 = straight ahead) to an index in ranges[]
+    auto angle_to_index = [&](float target_deg) {
+      float offset = target_deg - angle_min_deg;
+      while (offset < 0)
+        offset += 360.0f;
+      while (offset >= 360.0f)
+        offset -= 360.0f;
+      return static_cast<int>(offset / inc_deg) % n;
+    };
+
+    // add up all valid distances between two angles
+    auto sum_sector = [&](float start_deg, float end_deg) {
+      int start_idx = angle_to_index(start_deg);
+      int end_idx = angle_to_index(end_deg);
+      float total = 0.0f;
+
+      auto add_ray = [&](int i) {
+        float r = scan.ranges[i];
+        if (std::isinf(r) || std::isnan(r) || r < scan.range_min ||
+            r > scan.range_max) {
+          return;
+        }
+        total += r;
+      };
+
+      if (start_idx <= end_idx) {
+        for (int i = start_idx; i <= end_idx; ++i)
+          add_ray(i);
+      } else { // sector wraps around the end of the array
+        for (int i = start_idx; i < n; ++i)
+          add_ray(i);
+        for (int i = 0; i <= end_idx; ++i)
+          add_ray(i);
+      }
+      return total;
+    };
+
+    float total_dist_sec_right = sum_sector(-90.0f, -30.0f);
+    float total_dist_sec_front = sum_sector(-30.0f, 30.0f);
+    float total_dist_sec_left = sum_sector(30.0f, 90.0f);
+
+    (void)response;
+  }
   rclcpp::Service<robot_patrol::srv::GetDirection>::SharedPtr service_;
 };
 
